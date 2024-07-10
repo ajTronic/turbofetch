@@ -16,4 +16,4 @@ turbofetch
 
 # requirements
 - Arch Linux
-- A (nerd font)[https://www.nerdfonts.com/] as your terminal font.
+- A [nerd font](https://www.nerdfonts.com/) as your terminal font.
