@@ -1,7 +1,7 @@
 ### _turbofetch_
 ![Turbofetch output](turbofetch.png)
 
-A _blazingly-fast_ fetch cli tool written in C for Arch Linux.
+A _blazingly-fast_ fetch cli tool written in C for Arch Linux. Based on [nerdfetch](https://github.com/ThatOneCalculator/NerdFetch)
 
 # installation
 Run
