@@ -5,7 +5,7 @@ A _blazingly-fast_ fetch cli tool written in C for Arch Linux. Based on [nerdfet
 # Installation
 Run
 ```bash
-curl -ffSL https://github.com/ajTronic/turbofetch/main/install.sh | sh
+curl -ffSL https://github.com/ajTronic/turbofetch/blob/f23a5ccc49bf07370b1f69626df2bc8a63b5c38e/install.sh | sh
 ```
 
 # Usage
