@@ -83,6 +83,8 @@ char *get_mem() {
   int free_mem = atoi(strtok(NULL, "\n")) / 1024.0;
   int used_mem = total_mem - free_mem;
 
+  free(meminfo);
+
   char *result;
   asprintf(&result, "%d/%d MiB", used_mem, total_mem);
 
@@ -109,9 +111,10 @@ char* get_num_packages() {
   char* num_packages_output = (char*)exec_command("pacman -Q | wc -l");
   num_packages_output[strlen(num_packages_output)-1] = *"\0"; // remove last newline
 
-  // return result
   char *result;
   asprintf(&result, "%s pkgs", num_packages_output);
+
+  free(num_packages_output);
 
   return result;
 }
@@ -126,6 +129,8 @@ char* get_shell() { // todo get correct shell
   if (strstr(shell_path, "tcsh")) return "tcsh";
   if (strstr(shell_path, "dash")) return "dash";
   if (strstr(shell_path, "sh")) return "bash";
+
+  free(shell_path);
 
   return "unknown";
 }
