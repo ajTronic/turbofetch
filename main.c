@@ -77,6 +77,13 @@ void printInfo(char key[], char value[]) {
 }
 
 // get_* functions
+char *get_os() { // plase free result
+  char *osname = (char *)exec_command("grep -Po 'NAME=\"\\K.*?(?=\")' /etc/os-release | head -1");
+  osname[strlen(osname)-1] = 0;
+
+  return osname;
+}
+
 char *get_mem() {
   char *meminfo = (char *)exec_command("grep -m 2 -Eo '[0-9]{1,16}' /proc/meminfo");
   int total_mem = atoi(strtok(meminfo, "\n")) / 1024.0;
@@ -149,7 +156,7 @@ int main() {
   newline();
 
   // print info
-  printInfo("󰣇", "Arch Linux");
+  printInfo("󰣇", get_os());
   printInfo("", get_shell());
   printInfo("󰍛", get_mem());
   printInfo("󰏔", get_num_packages());
