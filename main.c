@@ -76,15 +76,36 @@ void printInfo(char key[], char value[]) {
   newline();
 }
 
-// get_* functions
-char *get_os() { // plase free result
-  char *osname = (char *)exec_command("grep -Po 'NAME=\"\\K.*?(?=\")' /etc/os-release | head -1");
-  osname[strlen(osname)-1] = 0;
+// TODO: get correct shell
+char* get_shell() { 
+  char* shell_path = (char*)exec_command("echo \"$SHELL\"");
+  char* shell_name;
 
-  return osname;
+
+  if (strstr(shell_path, "fish")) shell_name = "fish";
+  else if (strstr(shell_path, "zsh")) shell_name = "zsh";
+  else if (strstr(shell_path, "bash")) shell_name = "bash";
+  else if (strstr(shell_path, "ksh")) shell_name = "ksh";
+  else if (strstr(shell_path, "tcsh")) shell_name = "tcsh";
+  else if (strstr(shell_path, "dash")) shell_name = "dash";
+  else if (strstr(shell_path, "sh")) shell_name = "bash";
+  else shell_name = "unknown";
+
+  free(shell_path);
+
+  return shell_name;
 }
 
-char *get_mem() {
+// print_* functions
+void print_os() { // plase free result
+  char *osname = (char *)exec_command("grep -Po 'NAME=\"\\K.*?(?=\")' /etc/os-release | head -1");
+  osname[strlen(osname)-1] = 0;
+  printInfo("󰣇", osname);
+
+  free(osname);
+}
+
+void print_mem() {
   char *meminfo = (char *)exec_command("grep -m 2 -Eo '[0-9]{1,16}' /proc/meminfo");
   int total_mem = atoi(strtok(meminfo, "\n")) / 1024.0;
   int free_mem = atoi(strtok(NULL, "\n")) / 1024.0;
@@ -94,11 +115,12 @@ char *get_mem() {
 
   char *result;
   asprintf(&result, "%d/%d MiB", used_mem, total_mem);
+  printInfo("󰍛", result);
 
-  return result;
+  free(result);
 }
 
-char *get_uptime() {
+void print_uptime() {
   // get system info
   struct sysinfo info;
   sysinfo(&info);
@@ -110,11 +132,12 @@ char *get_uptime() {
   // return result
   char *result;
   asprintf(&result, "%dh %dm %ds", uptime_hours, uptime_mins, uptime_secs);
+  printInfo("󰅶", result);
 
-  return result;
+  free(result);
 }
 
-char* get_num_packages() {
+void print_num_packages() {
   char* num_packages_output = (char*)exec_command("pacman -Q | wc -l");
   num_packages_output[strlen(num_packages_output)-1] = *"\0"; // remove last newline
 
@@ -123,23 +146,25 @@ char* get_num_packages() {
 
   free(num_packages_output);
 
-  return result;
+  printInfo("󰏔", result);
+  
+  free(result);
 }
 
-char* get_shell() { // todo get correct shell
-  char* shell_path= (char*)exec_command("echo \"$SHELL\"");
+void print_shell() { 
+  char* shell_name = get_shell();
+  printInfo("", shell_name);
+}
 
-  if (strstr(shell_path, "fish")) return "fish";
-  if (strstr(shell_path, "zsh")) return "zsh";
-  if (strstr(shell_path, "bash")) return "bash";
-  if (strstr(shell_path, "ksh")) return "ksh";
-  if (strstr(shell_path, "tcsh")) return "tcsh";
-  if (strstr(shell_path, "dash")) return "dash";
-  if (strstr(shell_path, "sh")) return "bash";
+void print_colors() {
+  printColored("", MAGENTA);
+  printf(SEPARATOR);
 
-  free(shell_path);
+  char colors[][6] = {RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, NAVY};
 
-  return "unknown";
+  for (int i = 0; i < sizeof(*colors); i++) {
+    printColored(COLOR_CHAR, colors[i]);
+  }
 }
 
 int main() {
@@ -156,23 +181,12 @@ int main() {
   newline();
 
   // print info
-  printInfo("󰣇", get_os());
-  printInfo("", get_shell());
-  printInfo("󰍛", get_mem());
-  printInfo("󰏔", get_num_packages());
-  printInfo("󰅶", get_uptime());
-
-  // theme
-  printColored("", MAGENTA);
-  printf(SEPARATOR);
-
-  // colors to print
-  char colors[][6] = {RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, NAVY};
-
-  // print each color
-  for (int i = 0; i < sizeof(*colors); i++) {
-    printColored(COLOR_CHAR, colors[i]);
-  }
+  print_os();
+  print_shell();
+  print_mem();
+  print_num_packages();
+  print_uptime();
+  print_colors();
 
   // final newline that doesn't require ascii-art
   printf("\n");
