@@ -191,8 +191,5 @@ int main() {
   // final newline that doesn't require ascii-art
   printf("\n");
 
-  // add an extra newline for non-fish shells
-  if (strcmp("fish", get_shell()) != 0) printf("\n");
-
   return 0;
 }
