@@ -39,7 +39,8 @@ char ascii[][70] = {
 int line = 0;
 
 // run a terminal command
-const char *exec_command(char text[]) {
+const char *exec_command(char text[])
+{
   FILE *cmd;
   char result[sizeof(char) * 128];
 
@@ -48,7 +49,8 @@ const char *exec_command(char text[]) {
   outputPtr[0] = '\0';
 
   cmd = popen(text, "r");
-  while (fgets(result, sizeof(result), cmd)) { // read stream
+  while (fgets(result, sizeof(result), cmd))
+  { // read stream
     strcat(outputPtr, result);
   }
 
@@ -61,7 +63,8 @@ const char *exec_command(char text[]) {
 void printColored(char text[], char format[]) { printf("%s%s", format, text); }
 
 // print a newline and ascii art
-void newline() {
+void newline()
+{
   printf("\n");
   printColored(ascii[line], COLOR_MAIN);
   printf(SEPARATOR);
@@ -69,7 +72,8 @@ void newline() {
 }
 
 // print a key and a value to the info
-void printInfo(char key[], char value[]) {
+void printInfo(char key[], char value[])
+{
   printColored(key, COLOR_KEY);
   printf(SEPARATOR);
   printColored(value, COLOR_MAIN);
@@ -77,35 +81,51 @@ void printInfo(char key[], char value[]) {
 }
 
 // TODO: get correct shell
-char* get_shell() { 
-  char* shell_path = (char*)exec_command("echo \"$SHELL\"");
-  char* shell_name;
+char *get_shell()
+{
+  char *shell_path = (char *)exec_command("echo \"$SHELL\"");
+  char *shell_name;
 
-
-  if (strstr(shell_path, "fish")) shell_name = "fish";
-  else if (strstr(shell_path, "zsh")) shell_name = "zsh";
-  else if (strstr(shell_path, "bash")) shell_name = "bash";
-  else if (strstr(shell_path, "ksh")) shell_name = "ksh";
-  else if (strstr(shell_path, "tcsh")) shell_name = "tcsh";
-  else if (strstr(shell_path, "dash")) shell_name = "dash";
-  else if (strstr(shell_path, "sh")) shell_name = "bash";
-  else shell_name = "unknown";
+  if (strstr(shell_path, "fish"))
+    shell_name = "fish";
+  else if (strstr(shell_path, "zsh"))
+    shell_name = "zsh";
+  else if (strstr(shell_path, "bash"))
+    shell_name = "bash";
+  else if (strstr(shell_path, "ksh"))
+    shell_name = "ksh";
+  else if (strstr(shell_path, "tcsh"))
+    shell_name = "tcsh";
+  else if (strstr(shell_path, "dash"))
+    shell_name = "dash";
+  else if (strstr(shell_path, "sh"))
+    shell_name = "bash";
+  else
+    shell_name = "unknown";
 
   free(shell_path);
 
   return shell_name;
 }
 
-// print_* functions
-void print_os() { // plase free result
+const char* get_os() {
   char *osname = (char *)exec_command("grep -Po 'NAME=\"\\K.*?(?=\")' /etc/os-release | head -1");
-  osname[strlen(osname)-1] = 0;
+  osname[strlen(osname) - 1] = 0;
+  
+  return osname;
+}
+
+// print_* functions
+void print_os()
+{ 
+  char* osname = (char*)get_os();
   printInfo("󰣇", osname);
 
   free(osname);
 }
 
-void print_mem() {
+void print_mem()
+{
   char *meminfo = (char *)exec_command("grep -m 2 -Eo '[0-9]{1,16}' /proc/meminfo");
   int total_mem = atoi(strtok(meminfo, "\n")) / 1024.0;
   int free_mem = atoi(strtok(NULL, "\n")) / 1024.0;
@@ -120,7 +140,8 @@ void print_mem() {
   free(result);
 }
 
-void print_uptime() {
+void print_uptime()
+{
   // get system info
   struct sysinfo info;
   sysinfo(&info);
@@ -137,37 +158,55 @@ void print_uptime() {
   free(result);
 }
 
-void print_num_packages() {
-  char* num_packages_output = (char*)exec_command("pacman -Q | wc -l");
-  num_packages_output[strlen(num_packages_output)-1] = *"\0"; // remove last newline
+void print_num_packages()
+{
+  char *package_command;
+  const char *osname = get_os();
+
+  // printf("%s", get_package_manager());
+
+  if (strstr(osname, "Arch"))
+    package_command = "pacman -Q | wc -l";
+  else if (strstr(osname, "Fedora") != NULL)
+    package_command = "rpm -qa | wc -l";
+  else
+    package_command = "dpkg -l | wc -l";
+
+  char *num_packages_output = (char *)exec_command(package_command);
+  num_packages_output[strlen(num_packages_output) - 1] = *"\0"; // remove last newline
 
   char *result;
   asprintf(&result, "%s pkgs", num_packages_output);
 
   free(num_packages_output);
+  free((char*)osname);
 
   printInfo("󰏔", result);
-  
+
   free(result);
 }
 
-void print_shell() { 
-  char* shell_name = get_shell();
+void print_shell()
+{
+  char *shell_name = get_shell();
   printInfo("", shell_name);
 }
 
-void print_colors() {
+void print_colors()
+{
   printColored("", MAGENTA);
   printf(SEPARATOR);
 
   char colors[][6] = {RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, NAVY};
 
-  for (int i = 0; i < sizeof(*colors); i++) {
+  for (int i = 0; i < sizeof(*colors); i++)
+  {
     printColored(COLOR_CHAR, colors[i]);
   }
 }
 
-int main() {
+int main()
+{
   newline();
 
   printColored(getpwuid(getuid())->pw_name, YELLOW); // username
