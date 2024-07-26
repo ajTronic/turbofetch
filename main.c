@@ -227,7 +227,7 @@ int main()
   print_uptime();
   print_colors();
 
-  // final newline that doesn't require ascii-art
+  printf("\n");
   printf("\n");
 
   // reset colors
