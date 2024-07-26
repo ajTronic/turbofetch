@@ -165,7 +165,7 @@ void print_num_packages()
 
   // printf("%s", get_package_manager());
 
-  if (strstr(osname, "Arch"))
+  if (strstr(osname, "Arch") != NULL)
     package_command = "pacman -Q | wc -l";
   else if (strstr(osname, "Fedora") != NULL)
     package_command = "rpm -qa | wc -l";
