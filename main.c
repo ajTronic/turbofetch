@@ -230,5 +230,8 @@ int main()
   // final newline that doesn't require ascii-art
   printf("\n");
 
+  // reset colors
+  printColored(NORMAL, "");
+
   return 0;
 }
