@@ -82,5 +82,12 @@ cd ..
 sudo rm -rf turbofetch
 
 clear
-echo -e "${Green}Success${Color_Off}!${Yellow}"
-echo -e "Usage${Color_Off}: ${Cyan}turbofetch${Color_Off}"
+echo -e "${Purple} ____                              _
+/ ___| _   _  ___ ___ ___  ___ ___| |
+\___ \| | | |/ __/ __/ _ \/ __/ __| |
+ ___) | |_| | (_| (_|  __/\__ \__ \_|
+|____/ \__,_|\___\___\___||___/___(_)
+
+${Color_Off}"
+echo "Yay! Make sure you have a nerd font installed as your terminal font."
+echo -e "${Yellow}Usage${Color_Off}: ${Cyan}turbofetch${Color_Off}\n"
