@@ -1,6 +1,9 @@
-### _turbofetch_
-A _blazingly-fast_ fetch cli tool written in C for Linux. Based on [nerdfetch](https://github.com/ThatOneCalculator/NerdFetch)
+## _turbofetch_
+A _blazingly-fast_ fetch cli tool written in `C` for __Linux__. Based on [nerdfetch](https://github.com/ThatOneCalculator/NerdFetch). 
 ![Turbofetch output](images/turbofetch.png)
+
+### Speed comparison
+_65x_ faster than nerdfetch, _100x_ faster than neofetch, and _2x_ faster than fastfetch.
 
 # Installation
 Run
