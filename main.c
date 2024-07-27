@@ -119,7 +119,7 @@ const char* get_os() {
 void print_os()
 { 
   char* osname = (char*)get_os();
-  printInfo("󰣇", osname);
+  printInfo("", osname);
 
   free(osname);
 }
