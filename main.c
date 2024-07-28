@@ -29,7 +29,7 @@ char ascii[][70] = {
     "      \x1B[90m___    ",
     "     \x1B[90m(\x1B[0m.. \x1B[90m\\\x1B[0m   ",
     "     \x1B[90m(\x1B\x1B\x1B[33m<> \x1B[90m\x1B[0m\x1B[90m|\x1B[0m   ",
-    "    \x1B[90m/\x1B[0m/  \x1B[90m\\ \x1B[90m\\\x1B[0m  ",
+    "    \x1B[90m/\x1B[0m/  \x1B[0m\\ \x1B[90m\\\x1B[0m  ",
     "   \x1B[90m(\x1B[0m \x1B[0m\x1B[90m\x1B[0m|  |\x1B[0m \x1B[90m/|\x1B[0m ",
     "  \x1B[33m_\x1B[0m\x1B[90m/\\\x1B[0m "
     "\x1B[0m__)\x1B[90m/\x1B[0m\x1B[33m_\x1B[0m\x1B[90m)\x1B[0m ",
