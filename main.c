@@ -93,6 +93,7 @@ void printInfo(char key[], char value[])
   newline();
 }
 
+// todo: improve this using getenv("TERM")
 char *get_shell()
 {
   struct passwd *pw = getpwuid(getuid());
@@ -151,7 +152,7 @@ const char* get_os() {
 
 // print_* functions
 void print_os()
-{ 
+{
   char* osname = (char*)get_os();
   printInfo("", osname);
 
@@ -233,7 +234,7 @@ bool is_cache_valid(const char* cache_file_path) {
     if (stat(cache_file_path, &st) != 0) {
         return false; // Cache file doesn't exist
     }
-    
+
     time_t current_time = time(NULL);
     return (current_time - st.st_mtime) < CACHE_EXPIRY;
 }
@@ -273,53 +274,47 @@ void write_cache(const char* cache_file_path, const char* data) {
 void print_num_packages() {
     char *package_command = NULL;
     const char *osname = get_os();
-    bool validCommand = false; // Flag to check if a valid command was found
 
     if (strstr(osname, "Arch") != NULL) {
         package_command = "pacman -Q | wc -l";
-        validCommand = true;
     }
     else if (strstr(osname, "Fedora") != NULL) {
         package_command = "rpm -qa | wc -l";
-        validCommand = true;
     }
     else if (strstr(osname, "Debian") != NULL) {
         package_command = "dpkg -l | wc -l";
-        validCommand = true;
     }
     else if (strstr(osname, "NixOS") != NULL) {
       package_command = "nix-store -q --requisites /run/current-system ~/.nix-profile | wc -l";
-      validCommand = true;
-    }
-
-    if (validCommand) {
-        char *cache_file_path = get_cache_file_path();
-        char *cached_result = NULL;
-
-        if (is_cache_valid(cache_file_path)) {
-            cached_result = read_cache(cache_file_path);
-        }
-
-        if (cached_result) {
-            printInfo("󰏔", cached_result);
-            free(cached_result);
-        } else {
-            char *num_packages_output = (char *)exec_command(package_command);
-            num_packages_output[strlen(num_packages_output) - 1] = '\0'; // Remove last newline
-
-            char result[64];
-            snprintf(result, sizeof(result), "%s pkgs", num_packages_output);
-
-            free(num_packages_output);
-
-            printInfo("󰏔", result);
-            write_cache(cache_file_path, result);
-        }
-
-        free(cache_file_path);
-    } else {
+    } else { // unsupported os
         printInfo("󰏔", "unknown");
+        return;
     }
+
+    char *cache_file_path = get_cache_file_path();
+    char *cached_result = NULL;
+
+    if (is_cache_valid(cache_file_path)) {
+        cached_result = read_cache(cache_file_path);
+    }
+
+    if (cached_result) {
+        printInfo("󰏔", cached_result);
+        free(cached_result);
+    } else {
+        char *num_packages_output = (char *)exec_command(package_command);
+        num_packages_output[strlen(num_packages_output) - 1] = '\0'; // Remove last newline
+
+        char result[64];
+        snprintf(result, sizeof(result), "%s pkgs", num_packages_output);
+
+        free(num_packages_output);
+
+        printInfo("󰏔", result);
+        write_cache(cache_file_path, result);
+    }
+
+    free(cache_file_path);
 }
 
 void print_shell()
