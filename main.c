@@ -6,6 +6,8 @@
 #include <string.h>
 #include <sys/sysinfo.h>
 #include <unistd.h>
+#include <time.h>
+#include <sys/stat.h>
 
 // colour constants
 #define NORMAL "\x1B[0m"
@@ -24,6 +26,8 @@
 #define COLOR_KEY MAGENTA
 #define COLOR_MAIN WHITE
 
+#define CACHE_EXPIRY 86400
+
 // ascii-art related
 char ascii[][70] = {
     "      \x1B[90m___    ",
@@ -39,24 +43,33 @@ char ascii[][70] = {
 int line = 0;
 
 // run a terminal command
-const char *exec_command(char text[])
+const char *exec_command(const char *text)
 {
-  FILE *cmd;
-  char result[sizeof(char) * 128];
+    FILE *cmd;
+    char *outputPtr = NULL;
 
-  // create output pointer and initialize it
-  char *outputPtr = malloc(sizeof(char) * 1024);
-  outputPtr[0] = '\0';
+    // Dynamically allocate initial buffer for output
+    outputPtr = malloc(1024); // Initial size of 1024 bytes
+    if (!outputPtr) {
+        return NULL; // Handle allocation failure
+    }
+    outputPtr[0] = '\0';
 
-  cmd = popen(text, "r");
-  while (fgets(result, sizeof(result), cmd))
-  { // read stream
-    strcat(outputPtr, result);
-  }
+    cmd = popen(text, "r");
+    if (!cmd) {
+        free(outputPtr); // Clean up in case of error
+        return NULL;
+    }
 
-  pclose(cmd);
+    // Read stream and append to outputPtr
+    char buffer[128]; // Temporary buffer for reading each line
+    while (fgets(buffer, sizeof(buffer), cmd)) {
+        strncat(outputPtr, buffer, strlen(buffer)); // Append without exceeding buffer size
+    }
 
-  return outputPtr;
+    pclose(cmd);
+
+    return outputPtr;
 }
 
 // print coloured text to the terminal
@@ -80,39 +93,60 @@ void printInfo(char key[], char value[])
   newline();
 }
 
-// TODO: get correct shell
 char *get_shell()
 {
-  char *shell_path = (char *)exec_command("echo \"$SHELL\"");
+  struct passwd *pw = getpwuid(getuid());
+
+  char *shell_path = pw->pw_shell;
   char *shell_name;
 
   if (strstr(shell_path, "fish"))
-    shell_name = "fish";
+      shell_name = "fish";
   else if (strstr(shell_path, "zsh"))
-    shell_name = "zsh";
+      shell_name = "zsh";
   else if (strstr(shell_path, "bash"))
-    shell_name = "bash";
+      shell_name = "bash";
   else if (strstr(shell_path, "ksh"))
-    shell_name = "ksh";
+      shell_name = "ksh";
   else if (strstr(shell_path, "tcsh"))
-    shell_name = "tcsh";
+      shell_name = "tcsh";
   else if (strstr(shell_path, "dash"))
-    shell_name = "dash";
+      shell_name = "dash";
   else if (strstr(shell_path, "sh"))
-    shell_name = "bash";
+      shell_name = "bash";
   else
-    shell_name = "unknown";
-
-  free(shell_path);
+      shell_name = "unknown";
 
   return shell_name;
 }
 
 const char* get_os() {
-  char *osname = (char *)exec_command("grep -Po 'NAME=\"\\K.*?(?=\")' /etc/os-release | head -1");
-  osname[strlen(osname) - 1] = 0;
-  
-  return osname;
+    FILE *file = fopen("/etc/os-release", "r");
+    if (!file) {
+        perror("fopen");
+        return "unknown";
+    }
+
+    char line[256];
+    char *osname = NULL;
+
+    while (fgets(line, sizeof(line), file)) {
+        if (strncmp(line, "PRETTY_NAME=", 5) == 0) {
+            osname = strdup(line + 13);
+            if (osname) {
+                osname[strlen(osname) - 2] = '\0';
+            }
+            break;
+        }
+    }
+
+    fclose(file);
+
+    if (!osname) {
+        return "unknown";
+    }
+
+    return osname;
 }
 
 // print_* functions
@@ -124,20 +158,43 @@ void print_os()
   free(osname);
 }
 
-void print_mem()
-{
-  char *meminfo = (char *)exec_command("grep -m 2 -Eo '[0-9]{1,16}' /proc/meminfo");
-  int total_mem = atoi(strtok(meminfo, "\n")) / 1024.0;
-  int free_mem = atoi(strtok(NULL, "\n")) / 1024.0;
-  int used_mem = total_mem - free_mem;
+void print_mem() {
+    FILE *file = fopen("/proc/meminfo", "r");
+    if (!file) {
+        perror("fopen");
+        return;
+    }
 
-  free(meminfo);
+    char line[256];
+    int total_mem = 0;
+    int free_mem = 0;
+    int buffers = 0;
+    int cached = 0;
 
-  char *result;
-  asprintf(&result, "%d/%d MiB", used_mem, total_mem);
-  printInfo("󰍛", result);
+    while (fgets(line, sizeof(line), file)) {
+        if (strncmp(line, "MemTotal:", 9) == 0) {
+            total_mem = atoi(line + 9) / 1024;  // Convert from kB to MiB
+        } else if (strncmp(line, "MemFree:", 8) == 0) {
+            free_mem = atoi(line + 8) / 1024;  // Convert from kB to MiB
+        } else if (strncmp(line, "Buffers:", 8) == 0) {
+            buffers = atoi(line + 8) / 1024;  // Convert from kB to MiB
+        } else if (strncmp(line, "Cached:", 7) == 0) {
+            cached = atoi(line + 7) / 1024;  // Convert from kB to MiB
+        }
+        if (total_mem > 0 && free_mem > 0 && buffers > 0 && cached > 0) {
+            break;  // We have all needed values, no need to read further
+        }
+    }
 
-  free(result);
+    fclose(file);
+
+    int used_mem = total_mem - (free_mem + buffers + cached);
+
+    char *result;
+    asprintf(&result, "%d/%d MiB", used_mem, total_mem);
+    printInfo("󰍛", result);
+
+    free(result);
 }
 
 void print_uptime()
@@ -146,9 +203,9 @@ void print_uptime()
   struct sysinfo info;
   sysinfo(&info);
 
-  int uptime_hours = info.uptime / 60 / 60;
-  int uptime_mins = info.uptime % 60;
-  int uptime_secs = info.uptime % 60 % 60;
+  int uptime_hours = info.uptime / 3600;
+  int uptime_mins = (info.uptime % 3600) / 60;
+  int uptime_secs = info.uptime % 60;
 
   // return result
   char *result;
@@ -158,32 +215,111 @@ void print_uptime()
   free(result);
 }
 
-void print_num_packages()
-{
-  char *package_command;
-  const char *osname = get_os();
+// Function to get the user's cache directory
+char* get_cache_file_path() {
+    struct passwd *pw = getpwuid(getuid());
+    const char *homedir = pw->pw_dir;
 
-  // printf("%s", get_package_manager());
+    size_t path_len = strlen(homedir) + strlen("/.cache/num_packages_cache.txt") + 1;
+    char *cache_file_path = (char *)malloc(path_len);
+    snprintf(cache_file_path, path_len, "%s/.cache/num_packages_cache.txt", homedir);
 
-  if (strstr(osname, "Arch") != NULL)
-    package_command = "pacman -Q | wc -l";
-  else if (strstr(osname, "Fedora") != NULL)
-    package_command = "rpm -qa | wc -l";
-  else
-    package_command = "dpkg -l | wc -l";
+    return cache_file_path;
+}
 
-  char *num_packages_output = (char *)exec_command(package_command);
-  num_packages_output[strlen(num_packages_output) - 1] = *"\0"; // remove last newline
+// Function to check if the cache is valid
+bool is_cache_valid(const char* cache_file_path) {
+    struct stat st;
+    if (stat(cache_file_path, &st) != 0) {
+        return false; // Cache file doesn't exist
+    }
+    
+    time_t current_time = time(NULL);
+    return (current_time - st.st_mtime) < CACHE_EXPIRY;
+}
 
-  char *result;
-  asprintf(&result, "%s pkgs", num_packages_output);
+// Function to read the cache file
+char* read_cache(const char* cache_file_path) {
+    FILE *file = fopen(cache_file_path, "r");
+    if (!file) {
+        return NULL;
+    }
 
-  free(num_packages_output);
-  free((char*)osname);
+    char *line = (char *)malloc(64);
+    if (fgets(line, 64, file) == NULL) {
+        free(line);
+        fclose(file);
+        return NULL;
+    }
 
-  printInfo("󰏔", result);
+    fclose(file);
 
-  free(result);
+    // Remove newline character
+    line[strcspn(line, "\n")] = '\0';
+    return line;
+}
+
+// Function to write to the cache file
+void write_cache(const char* cache_file_path, const char* data) {
+    FILE *file = fopen(cache_file_path, "w");
+    if (!file) {
+        return;
+    }
+
+    fprintf(file, "%s\n", data);
+    fclose(file);
+}
+
+void print_num_packages() {
+    char *package_command = NULL;
+    const char *osname = get_os();
+    bool validCommand = false; // Flag to check if a valid command was found
+
+    if (strstr(osname, "Arch") != NULL) {
+        package_command = "pacman -Q | wc -l";
+        validCommand = true;
+    }
+    else if (strstr(osname, "Fedora") != NULL) {
+        package_command = "rpm -qa | wc -l";
+        validCommand = true;
+    }
+    else if (strstr(osname, "Debian") != NULL) {
+        package_command = "dpkg -l | wc -l";
+        validCommand = true;
+    }
+    else if (strstr(osname, "NixOS") != NULL) {
+      package_command = "nix-store -q --requisites /run/current-system ~/.nix-profile | wc -l";
+      validCommand = true;
+    }
+
+    if (validCommand) {
+        char *cache_file_path = get_cache_file_path();
+        char *cached_result = NULL;
+
+        if (is_cache_valid(cache_file_path)) {
+            cached_result = read_cache(cache_file_path);
+        }
+
+        if (cached_result) {
+            printInfo("󰏔", cached_result);
+            free(cached_result);
+        } else {
+            char *num_packages_output = (char *)exec_command(package_command);
+            num_packages_output[strlen(num_packages_output) - 1] = '\0'; // Remove last newline
+
+            char result[64];
+            snprintf(result, sizeof(result), "%s pkgs", num_packages_output);
+
+            free(num_packages_output);
+
+            printInfo("󰏔", result);
+            write_cache(cache_file_path, result);
+        }
+
+        free(cache_file_path);
+    } else {
+        printInfo("󰏔", "unknown");
+    }
 }
 
 void print_shell()

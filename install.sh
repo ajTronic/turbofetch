@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Reset
 Color_Off='\033[0m'       # Text Reset
 
@@ -12,14 +12,11 @@ Purple='\033[0;35m'       # Purple
 Cyan='\033[0;36m'         # Cyan
 White='\033[0;37m'        # White
 
-sudo git clone https://github.com/ajTronic/turbofetch.git
+sudo -v
 
-cd turbofetch
+wget https://github.com/ajTronic/turbofetch/releases/latest/download/turbofetch
 
-sudo cp turbofetch /usr/local/bin/turbofetch
-
-cd ..
-sudo rm -rf turbofetch
+sudo mv turbofetch /usr/local/bin/turbofetch
 
 clear
 printf "${Purple} ____                              _
