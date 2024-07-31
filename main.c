@@ -42,6 +42,15 @@ char ascii[][70] = {
 
 int line = 0;
 
+// malloc that never returns null (see https://stackoverflow.com/questions/7940279/should-we-check-if-memory-allocations-fail)
+void * emalloc(size_t amt){
+    void *v = malloc(amt);  
+    if (v) return v;
+
+    fprintf(stderr, "out of memory\n");
+    exit(EXIT_FAILURE);
+}
+
 // run a terminal command
 const char *exec_command(const char *text)
 {
@@ -49,11 +58,7 @@ const char *exec_command(const char *text)
     char *outputPtr = NULL;
 
     // Dynamically allocate initial buffer for output
-    outputPtr = malloc(1024); // Initial size of 1024 bytes
-    if (!outputPtr)
-    {
-        return NULL; // Handle allocation failure
-    }
+    outputPtr = emalloc(1024); // Initial size of 1024 bytes
     outputPtr[0] = '\0';
 
     cmd = popen(text, "r");
@@ -243,7 +248,7 @@ char *get_cache_file_path()
     const char *homedir = pw->pw_dir;
 
     size_t path_len = strlen(homedir) + strlen("/.cache/num_packages_cache.txt") + 1;
-    char *cache_file_path = (char *)malloc(path_len);
+    char *cache_file_path = (char *)emalloc(path_len);
     snprintf(cache_file_path, path_len, "%s/.cache/num_packages_cache.txt", homedir);
 
     return cache_file_path;
@@ -271,7 +276,7 @@ char *read_cache(const char *cache_file_path)
         return NULL;
     }
 
-    char *line = (char *)malloc(64);
+    char *line = (char *)emalloc(64);
     if (fgets(line, 64, file) == NULL)
     {
         free(line);
