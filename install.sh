@@ -17,6 +17,7 @@ sudo -v
 wget https://github.com/ajTronic/turbofetch/releases/latest/download/turbofetch
 
 sudo mv turbofetch /usr/local/bin/turbofetch
+chmod +x /usr/local/bin/turbofetch
 
 clear
 printf "${Purple} ____                              _
