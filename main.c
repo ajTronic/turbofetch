@@ -301,7 +301,7 @@ void print_num_packages()
             package_command = "rpm -qa | wc -l";
         else if (strstr(osname, "Debian") != NULL)
             package_command = "dpkg -l | wc -l";
-        else if (strstr(osname, "NixOs") != NULL)
+        else if (strstr(osname, "NixOS") != NULL)
             package_command = "nix-store -q --requisites /run/current-system ~/.nix-profile | wc -l";
         else // Unsupported os
         {
