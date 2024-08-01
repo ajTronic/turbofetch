@@ -306,6 +306,7 @@ void print_num_packages()
         else // Unsupported os
         {
             printInfo("󰏔", "unknown");
+            free(cache_file_path);
             return;
         }
 
