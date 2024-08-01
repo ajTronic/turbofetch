@@ -9,7 +9,6 @@
 #include <time.h>
 #include <sys/stat.h>
 
-// colour constants
 #define NORMAL "\x1B[0m"
 #define RED "\x1B[31m"
 #define GREEN "\x1B[32m"
@@ -20,7 +19,6 @@
 #define WHITE "\x1B[37m"
 #define NAVY "\x1B[2m"
 
-// custom constants
 #define SEPARATOR "  "
 #define COLOR_CHAR " "
 #define COLOR_KEY MAGENTA
@@ -28,7 +26,7 @@
 
 #define CACHE_EXPIRY 86400
 
-// ascii-art related
+// Ascii-art related
 char ascii[][70] = {
     "      \x1B[90m___    ",
     "     \x1B[90m(\x1B[0m.. \x1B[90m\\\x1B[0m   ",
@@ -42,16 +40,17 @@ char ascii[][70] = {
 
 int line = 0;
 
-// malloc that never returns null (see https://stackoverflow.com/questions/7940279/should-we-check-if-memory-allocations-fail)
-void * emalloc(size_t amt){
-    void *v = malloc(amt);  
+// Malloc that never returns null (see https://stackoverflow.com/questions/7940279/should-we-check-if-memory-allocations-fail)
+void *emalloc(size_t amt)
+{
+    void *v = malloc(amt);
     if (v) return v;
 
     fprintf(stderr, "out of memory\n");
     exit(EXIT_FAILURE);
 }
 
-// run a terminal command
+// Run a terminal command
 const char *exec_command(const char *text)
 {
     FILE *cmd;
@@ -71,19 +70,17 @@ const char *exec_command(const char *text)
     // Read stream and append to outputPtr
     char buffer[128]; // Temporary buffer for reading each line
     while (fgets(buffer, sizeof(buffer), cmd))
-    {
         strncat(outputPtr, buffer, strlen(buffer)); // Append without exceeding buffer size
-    }
 
     pclose(cmd);
 
     return outputPtr;
 }
 
-// print coloured text to the terminal
+// Print coloured text to the terminal
 void printColored(char text[], char format[]) { printf("%s%s", format, text); }
 
-// print a newline and ascii art
+// Print a newline and ascii art
 void newline()
 {
     printf("\n");
@@ -92,7 +89,7 @@ void newline()
     line++;
 }
 
-// print a key and a value to the info
+// Print a key and a value to the info
 void printInfo(char key[], char value[])
 {
     printColored(key, COLOR_KEY);
@@ -101,7 +98,7 @@ void printInfo(char key[], char value[])
     newline();
 }
 
-// todo: improve this using getenv("TERM")
+// Todo: improve this using getenv("TERM")
 char *get_shell()
 {
     struct passwd *pw = getpwuid(getuid());
@@ -146,25 +143,19 @@ const char *get_os()
         if (strncmp(line, "PRETTY_NAME=", 5) == 0)
         {
             osname = strdup(line + 13);
-            if (osname)
-            {
-                osname[strlen(osname) - 2] = '\0';
-            }
+            if (osname) osname[strlen(osname) - 2] = '\0';
             break;
         }
     }
 
     fclose(file);
 
-    if (!osname)
-    {
-        return "unknown";
-    }
+    if (!osname) return "unknown";
 
     return osname;
 }
 
-// print_* functions
+// Print_* functions
 void print_os()
 {
     char *osname = (char *)get_os();
@@ -188,28 +179,19 @@ void print_mem()
     int buffers = 0;
     int cached = 0;
 
+    // Todo: figure out what this code does
     while (fgets(line, sizeof(line), file))
     {
         if (strncmp(line, "MemTotal:", 9) == 0)
-        {
             total_mem = atoi(line + 9) / 1024; // Convert from kB to MiB
-        }
         else if (strncmp(line, "MemFree:", 8) == 0)
-        {
             free_mem = atoi(line + 8) / 1024; // Convert from kB to MiB
-        }
         else if (strncmp(line, "Buffers:", 8) == 0)
-        {
             buffers = atoi(line + 8) / 1024; // Convert from kB to MiB
-        }
         else if (strncmp(line, "Cached:", 7) == 0)
-        {
             cached = atoi(line + 7) / 1024; // Convert from kB to MiB
-        }
         if (total_mem > 0 && free_mem > 0 && buffers > 0 && cached > 0)
-        {
             break; // We have all needed values, no need to read further
-        }
     }
 
     fclose(file);
@@ -225,7 +207,7 @@ void print_mem()
 
 void print_uptime()
 {
-    // get system info
+    // Get system info
     struct sysinfo info;
     sysinfo(&info);
 
@@ -233,7 +215,7 @@ void print_uptime()
     int uptime_mins = (info.uptime % 3600) / 60;
     int uptime_secs = info.uptime % 60;
 
-    // return result
+    // Return result
     char *result;
     asprintf(&result, "%dh %dm %ds", uptime_hours, uptime_mins, uptime_secs);
     printInfo("󰅶", result);
@@ -259,9 +241,7 @@ bool is_cache_valid(const char *cache_file_path)
 {
     struct stat st;
     if (stat(cache_file_path, &st) != 0)
-    {
         return false; // Cache file doesn't exist
-    }
 
     time_t current_time = time(NULL);
     return (current_time - st.st_mtime) < CACHE_EXPIRY;
@@ -271,10 +251,7 @@ bool is_cache_valid(const char *cache_file_path)
 char *read_cache(const char *cache_file_path)
 {
     FILE *file = fopen(cache_file_path, "r");
-    if (!file)
-    {
-        return NULL;
-    }
+    if (!file) return NULL;
 
     char *line = (char *)emalloc(64);
     if (fgets(line, 64, file) == NULL)
@@ -295,10 +272,6 @@ char *read_cache(const char *cache_file_path)
 void write_cache(const char *cache_file_path, const char *data)
 {
     FILE *file = fopen(cache_file_path, "w");
-    if (!file)
-    {
-        return;
-    }
 
     fprintf(file, "%s\n", data);
     fclose(file);
@@ -310,9 +283,7 @@ void print_num_packages()
     char *cached_result = NULL;
 
     if (is_cache_valid(cache_file_path))
-    {
         cached_result = read_cache(cache_file_path);
-    }
 
     if (cached_result)
     {
@@ -325,22 +296,14 @@ void print_num_packages()
         const char *osname = get_os();
 
         if (strstr(osname, "Arch") != NULL)
-        {
-            package_command = "pacman -Q | wc -l";
-        }
+            package_command = "pacman -q | wc -l";
         else if (strstr(osname, "Fedora") != NULL)
-        {
             package_command = "rpm -qa | wc -l";
-        }
         else if (strstr(osname, "Debian") != NULL)
-        {
             package_command = "dpkg -l | wc -l";
-        }
-        else if (strstr(osname, "NixOS") != NULL)
-        {
+        else if (strstr(osname, "NixOs") != NULL)
             package_command = "nix-store -q --requisites /run/current-system ~/.nix-profile | wc -l";
-        }
-        else // unsupported os
+        else // Unsupported os
         {
             printInfo("󰏔", "unknown");
             return;
@@ -375,26 +338,24 @@ void print_colors()
     char colors[][6] = {RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, NAVY};
 
     for (int i = 0; i < sizeof(*colors); i++)
-    {
         printColored(COLOR_CHAR, colors[i]);
-    }
 }
 
 int main()
 {
     newline();
 
-    printColored(getpwuid(getuid())->pw_name, YELLOW); // username
+    printColored(getpwuid(getuid())->pw_name, YELLOW); // Username
     printColored("@", RED);
 
-    // computer name
+    // Computer name
     char hostname[HOST_NAME_MAX];
     gethostname(hostname, HOST_NAME_MAX);
     printColored(hostname, BLUE);
 
     newline();
 
-    // print info
+    // Print info
     print_os();
     print_shell();
     print_mem();
@@ -405,7 +366,7 @@ int main()
     printf("\n");
     printf("\n");
 
-    // reset colors
+    // Reset colors
     printColored(NORMAL, "");
 
     return 0;
