@@ -3,9 +3,9 @@ A _blazingly-fast_ fetch cli tool written in `C` for __Linux__. Based on [nerdfe
 ![Turbofetch output](images/turbofetch.png)
 
 # Speed comparison
-- _65x_ faster than nerdfetch
-- _100x_ faster than neofetch
-- _2x_ faster than fastfetch
+- _1200x_ faster than nerdfetch
+- _1500x_ faster than neofetch
+- _50x_ faster than fastfetch
 
 (tested on Arch btw)
 
